@@ -1,0 +1,46 @@
+{
+"data": {
+
+"ARM_SUBSCRIPTION_ID": { 
+  "value" : "example",
+  "sensitive": "false", 
+  "vartype": "env" },
+"ARM_CLIENT_SECRET": {
+  "value" : "exmaple",
+  "sensitive": "true", 
+  "vartype": "env" },
+"ARM_TENANT_ID": {
+  "value" : "example",
+  "sensitive": "false", 
+  "vartype": "env" },
+"AWS_SECRET_ACCESS_KEY" : {
+  "value" : "example",
+  "sensitive" : "true" , 
+  "vartype": "env" },
+"AWS_ACCESS_KEY_ID" : {
+  "value" : "example",
+  "sensitive" : "false", 
+  "vartype": "env"  },
+"ARM_CLIENT_ID" : { 
+  "value" : "example",
+  "sensitive" : "false", 
+  "vartype": "env"  },
+"CONFIRM_DESTROY" : {
+  "value" : "1",
+  "sensitive" : "false", 
+  "vartype": "env"  },
+"datadog_api_key" : {
+    "value" : "example",
+    "sensitive" : "true", 
+    "vartype": "terraform"  },
+"datadog_app_key" : {
+      "value" : "example",
+      "sensitive" : "true", 
+      "vartype": "terraform"  },
+"ssh_key" : {
+  "value": "example",
+    "sensitive" : "true",
+  "vartype": "terraform"
+}
+  }
+}
