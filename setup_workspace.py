@@ -2,11 +2,15 @@ import requests
 import json
 import hcl
 #User Configurable Vars
-organization = "azc"
-workspaceName = "CompanyXYZ-Application3"
-ATLAS_TOKEN = "Bearer c6dlOIUOp9IPhA.atlasv1.e5KpWCdKJ8ZtIRdzzEmmHg3yiMzL2l866FLNblMtEd7CKDbayzXG7I5v6LPFfb5EFTg"
+TFEorganization = ""
+TFEworkspaceName = ""
+AtlasToken = ""
+vcsOrganization = ""
+vcsWorkspace = ""
+vcsWorkingDirectory = ""
 
 #Base configurations
+ATLAS_TOKEN = "Bearer " + AtlasToken
 headers = {'Authorization': ATLAS_TOKEN, 'Content-Type' : 'application/vnd.api+json'}
 createWorkspaceURL = "https://app.terraform.io/api/v2/organizations/"+organization+"/workspaces"
 createVariablesURL = "https://app.terraform.io/api/v2/vars"
@@ -43,6 +47,10 @@ def createVarPayload(varName,defaultVal,organization,workspaceName,category,sens
 
 def createWorkspacePayload(vcsOrganization,vcsWorkspace,tfeWorkspaceName,workingDirectory,tfeOrganization):
   oAuthToken = getoAuthToken(tfeOrganization)
+  try:
+    workingDirectory
+  except:
+    workingDirectory = ""
   workspacePayload = {
   "data": {
     "attributes": {
@@ -62,7 +70,7 @@ def createWorkspacePayload(vcsOrganization,vcsWorkspace,tfeWorkspaceName,working
   return workspacePayload
 
 def createWorkspace():
-  payload = createWorkspacePayload("AdamCavaliere","terraform-aws-examples",workspaceName,"application-config",organization)
+  payload = createWorkspacePayload(vcsOrganization,vcsWorkspace,TFEworkspaceName,vcsWorkingDirectory,TFEorganization)
   try:
     r = requests.post(createWorkspaceURL, headers=headers, data=json.dumps(payload))
   except:
