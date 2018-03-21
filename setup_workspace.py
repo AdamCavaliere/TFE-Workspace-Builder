@@ -1,28 +1,39 @@
 import requests
 import json
 import hcl
-#User Configurable Vars
-TFEorganization = ""
-TFEworkspaceName = ""
-AtlasToken = ""
-vcsOrganization = ""
-vcsWorkspace = ""
-vcsWorkingDirectory = ""
+
+utilizeVault = True
+
+#Configure Vault and grab secrets
+if utilizeVault == True:
+  import hvac
+  import os 
+  client = hvac.Client(url='http://sevault.hashidemos.io:8200', token=os.environ['VAULT_TOKEN'])
+  terraform_secrets = client.read('secret/adam/terraform')
+  ts = terraform_secrets['data']
+
+#User Configurable Vars - if utilizing Vault, replace the ts['foo'] values.
+TFEorganization = "azc"
+TFEworkspace = "NewTest"
+AtlasToken = "Bearer " + ts['AtlasToken']
+vcsOrganization = "AdamCavaliere"
+vcsWorkspace = "terraform-aws-examples"
+vcsWorkingDirectory = "application-config"
+
 
 #Base configurations
-ATLAS_TOKEN = "Bearer " + AtlasToken
-headers = {'Authorization': ATLAS_TOKEN, 'Content-Type' : 'application/vnd.api+json'}
-createWorkspaceURL = "https://app.terraform.io/api/v2/organizations/"+organization+"/workspaces"
+headers = {'Authorization': AtlasToken, 'Content-Type' : 'application/vnd.api+json'}
+createWorkspaceURL = "https://app.terraform.io/api/v2/organizations/"+TFEorganization+"/workspaces"
 createVariablesURL = "https://app.terraform.io/api/v2/vars"
-
+tokenURL = 'https://app.terraform.io/api/v2/organizations/'+TFEorganization+'/oauth-tokens'
 #todo: 404 - workspace not found, 422 variables already present
 
 def getoAuthToken(organization):
-  r = requests.get('https://app.terraform.io/api/v2/organizations/'+organization+'/oauth-tokens', headers=headers)
+  r = requests.get(tokenURL, headers=headers)
   response = json.loads(r.text)
   return response['data'][0]['id']
 
-def createVarPayload(varName,defaultVal,organization,workspaceName,category,sensitive):
+def createVarPayload(varName,defaultVal,TFEorganization,TFEworkspace,category,sensitive):
   varPayload = {
   "data": {
     "type":"vars",
@@ -36,16 +47,16 @@ def createVarPayload(varName,defaultVal,organization,workspaceName,category,sens
   },
   "filter": {
     "organization": {
-      "name":organization
+      "name":TFEorganization
     },
     "workspace": {
-      "name":workspaceName
+      "name":TFEworkspace
     }
   }
   }
   return varPayload
 
-def createWorkspacePayload(vcsOrganization,vcsWorkspace,tfeWorkspaceName,workingDirectory,tfeOrganization):
+def createWorkspacePayload(vcsOrganization,vcsWorkspace,TFEworkspace,workingDirectory,tfeOrganization):
   oAuthToken = getoAuthToken(tfeOrganization)
   try:
     workingDirectory
@@ -54,7 +65,7 @@ def createWorkspacePayload(vcsOrganization,vcsWorkspace,tfeWorkspaceName,working
   workspacePayload = {
   "data": {
     "attributes": {
-      "name":tfeWorkspaceName,
+      "name":TFEworkspace,
       "working-directory": workingDirectory,
       "vcs-repo": {
         "identifier": vcsOrganization+"/"+vcsWorkspace,
@@ -66,44 +77,51 @@ def createWorkspacePayload(vcsOrganization,vcsWorkspace,tfeWorkspaceName,working
     "type":"workspaces"
   }
   }
-  print json.dumps(workspacePayload)  
   return workspacePayload
 
 def createWorkspace():
-  payload = createWorkspacePayload(vcsOrganization,vcsWorkspace,TFEworkspaceName,vcsWorkingDirectory,TFEorganization)
+  payload = createWorkspacePayload(vcsOrganization,vcsWorkspace,TFEworkspace,vcsWorkingDirectory,TFEorganization)
   try:
     r = requests.post(createWorkspaceURL, headers=headers, data=json.dumps(payload))
   except:
-    print r.raise_for_status()
+    print r.status_code()
 
 def createVariables():
-  with open('variables.tf', 'r') as fp:
-      obj = hcl.load(fp)
+  noFile = False
+  try:
+    with open('variables.tf', 'r') as fp:
+        obj = hcl.load(fp)
+  except:
+    noFile = True
 
-  for k, v in obj['variable'].items():
-    varName = k
-    for k2, v2 in v.items():
-      if k2 == 'default':
-        defaultVal = v2
-    try:
-      defaultVal
-    except:
-      defaultVal = " "
-    payload = createVarPayload(varName,defaultVal,organization,workspaceName,"terraform","false")
-    try:
-      r = requests.post(createVariablesURL, headers=headers, data=json.dumps(payload))
-    except:
-      print r.raise_for_status()
-
-def setEnvVariables():
-  with open('envVars.json', 'r') as fp:
-    obj = json.load(fp)
-    for k,v in obj['data'].items():  
-      payload = createVarPayload(k,v['value'],organization,workspaceName,v['vartype'],v['sensitive'])
+  if noFile == False:
+    for k, v in obj['variable'].items():
+      varName = k
+      for k2, v2 in v.items():
+        if k2 == 'default':
+          defaultVal = v2
+      try:
+        defaultVal
+      except:
+        defaultVal = " "
+      payload = createVarPayload(varName,defaultVal,TFEorganization,TFEworkspace,"terraform","false")
       try:
         r = requests.post(createVariablesURL, headers=headers, data=json.dumps(payload))
       except:
-        print r.raise_for_status()
+        print r.status_code()
+
+def setEnvVariables():
+  if utilizeVault == False:
+    with open('envVars.json', 'r') as fp:
+      obj = json.load(fp)
+  else:
+    obj = json.loads(ts['envVars'])
+  for k,v in obj['data'].items():  
+    payload = createVarPayload(k,v['value'],TFEorganization,TFEworkspace,v['vartype'],v['sensitive'])
+    try:
+      r = requests.post(createVariablesURL, headers=headers, data=json.dumps(payload))
+    except:
+      print r.status_code()
 
 createWorkspace()
 setEnvVariables()
