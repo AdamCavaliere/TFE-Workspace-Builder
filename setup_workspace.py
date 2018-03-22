@@ -127,11 +127,7 @@ def setEnvVariables():
     except:
       print r.status_code
 
-def getExistingVariable(existingVar,TFEorganization,TFEworkspace):
-  filterOrg = "filter[organization][name]=" + TFEorganization
-  filterWorkspace = "filter[workspace][name]=" + TFEworkspace
-  filterURL = createVariablesURL + "?" + filterOrg + "&" + filterWorkspace
-  
+ 
 createWorkspace()
 setEnvVariables()
 createVariables()
