@@ -13,11 +13,13 @@ if utilizeVault == True:
   client = hvac.Client(url=vaultURL, token=os.environ['VAULT_TOKEN'])
   terraform_secrets = client.read(secretLocation)
   ts = terraform_secrets['data']
+  AtlasToken = "Bearer " + ts['AtlasToken']
+else
+  AtlasToken = os.environ['ATLAST_TOKEN']
 
 #User Configurable Vars - if utilizing Vault, replace the ts['foo'] values.
 TFEorganization = "azc"
 TFEworkspace = "NewTest23"
-AtlasToken = "Bearer " + ts['AtlasToken']
 vcsOrganization = "AdamCavaliere"
 vcsWorkspace = "terraform-aws-examples"
 vcsWorkingDirectory = "application-config"
