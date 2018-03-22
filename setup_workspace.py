@@ -1,20 +1,22 @@
 import requests
 import json
-import hcl
+import hcl #python pip package is pyhcl
 
 utilizeVault = True
+vaultURL = "http://sevault.hashidemos.io:8200"
+secretLocation = "secret/adam/terraform"
 
 #Configure Vault and grab secrets
 if utilizeVault == True:
   import hvac
   import os 
-  client = hvac.Client(url='http://sevault.hashidemos.io:8200', token=os.environ['VAULT_TOKEN'])
-  terraform_secrets = client.read('secret/adam/terraform')
+  client = hvac.Client(url=vaultURL, token=os.environ['VAULT_TOKEN'])
+  terraform_secrets = client.read(secretLocation)
   ts = terraform_secrets['data']
 
 #User Configurable Vars - if utilizing Vault, replace the ts['foo'] values.
 TFEorganization = "azc"
-TFEworkspace = "NewTest"
+TFEworkspace = "NewTest23"
 AtlasToken = "Bearer " + ts['AtlasToken']
 vcsOrganization = "AdamCavaliere"
 vcsWorkspace = "terraform-aws-examples"
@@ -121,8 +123,13 @@ def setEnvVariables():
     try:
       r = requests.post(createVariablesURL, headers=headers, data=json.dumps(payload))
     except:
-      print r.status_code()
+      print r.status_code
 
+def getExistingVariable(existingVar,TFEorganization,TFEworkspace):
+  filterOrg = "filter[organization][name]=" + TFEorganization
+  filterWorkspace = "filter[workspace][name]=" + TFEworkspace
+  filterURL = createVariablesURL + "?" + filterOrg + "&" + filterWorkspace
+  
 createWorkspace()
 setEnvVariables()
 createVariables()
