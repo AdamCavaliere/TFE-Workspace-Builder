@@ -14,7 +14,7 @@ if utilizeVault == True:
   terraform_secrets = client.read(secretLocation)
   ts = terraform_secrets['data']
   AtlasToken = "Bearer " + ts['AtlasToken']
-else
+else:
   AtlasToken = os.environ['ATLAST_TOKEN']
 
 #User Configurable Vars - if utilizing Vault, replace the ts['foo'] values.
@@ -101,13 +101,10 @@ def createVariables():
   if noFile == False:
     for k, v in obj['variable'].items():
       varName = k
+      defaultVal = ""
       for k2, v2 in v.items():
         if k2 == 'default':
           defaultVal = v2
-      try:
-        defaultVal
-      except:
-        defaultVal = " "
       payload = createVarPayload(varName,defaultVal,TFEorganization,TFEworkspace,"terraform","false")
       try:
         r = requests.post(createVariablesURL, headers=headers, data=json.dumps(payload))
