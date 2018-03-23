@@ -15,7 +15,7 @@ if utilizeVault == True:
   ts = terraform_secrets['data']
   AtlasToken = "Bearer " + ts['AtlasToken']
 else:
-  AtlasToken = os.environ['ATLAST_TOKEN']
+  AtlasToken = os.environ['ATLAS_TOKEN']
 
 #User Configurable Vars - if utilizing Vault, replace the ts['foo'] values.
 TFEorganization = "azc"
