@@ -1,28 +1,27 @@
 import requests
 import json
 import hcl #python pip package is pyhcl
-
-utilizeVault = True
+import os
+utilizeVault = False
 vaultURL = "http://sevault.hashidemos.io:8200"
 secretLocation = "secret/adam/terraform"
 
 #Configure Vault and grab secrets
 if utilizeVault == True:
   import hvac
-  import os 
   client = hvac.Client(url=vaultURL, token=os.environ['VAULT_TOKEN'])
   terraform_secrets = client.read(secretLocation)
   ts = terraform_secrets['data']
   AtlasToken = "Bearer " + ts['AtlasToken']
 else:
-  AtlasToken = os.environ['ATLAS_TOKEN']
+  AtlasToken = "Bearer " + os.environ['ATLAS_TOKEN']
 
 #User Configurable Vars - if utilizing Vault, replace the ts['foo'] values.
 TFEorganization = "azc"
-TFEworkspace = "NewTest23"
+TFEworkspace = "Distributor-XYZ-Network"
 vcsOrganization = "AdamCavaliere"
-vcsWorkspace = "terraform-aws-examples"
-vcsWorkingDirectory = "application-config"
+vcsWorkspace = "terraform-demos"
+vcsWorkingDirectory = "azure-baseNetwork"
 
 
 #Base configurations
@@ -113,7 +112,7 @@ def createVariables():
 
 def setEnvVariables():
   if utilizeVault == False:
-    with open('envVars.json', 'r') as fp:
+    with open('/Users/adam/SynologyDrive/HashiDemos/terraform-aws-examples/application-config/envVars.json', 'r') as fp:
       obj = json.load(fp)
   else:
     obj = json.loads(ts['envVars'])
