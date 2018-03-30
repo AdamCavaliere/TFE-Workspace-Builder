@@ -22,7 +22,7 @@ else:
 TFEorganization = "azc"
 TFEworkspace = "Distributor-XYZ-Network"
 vcsOrganization = "AdamCavaliere"
-vcsWorkspace = "terraform-demos" #This is the repo which you are linking to your TFE workspace
+vcsRepo = "terraform-demos" #This is the repo which you are linking to your TFE workspace
 vcsWorkingDirectory = "" #This can be blank - only needed to be specified if you are using a sub-directory in your repo.
 
 
@@ -62,7 +62,7 @@ def createVarPayload(varName,defaultVal,TFEorganization,TFEworkspace,category,se
   }
   return varPayload
 
-def createWorkspacePayload(vcsOrganization,vcsWorkspace,TFEworkspace,workingDirectory,tfeOrganization):
+def createWorkspacePayload(vcsOrganization,vcsRepo,TFEworkspace,workingDirectory,tfeOrganization):
   oAuthToken = getoAuthToken(tfeOrganization)
   try:
     workingDirectory
@@ -74,7 +74,7 @@ def createWorkspacePayload(vcsOrganization,vcsWorkspace,TFEworkspace,workingDire
       "name":TFEworkspace,
       "working-directory": workingDirectory,
       "vcs-repo": {
-        "identifier": vcsOrganization+"/"+vcsWorkspace,
+        "identifier": vcsOrganization+"/"+vcsRepo,
         "oauth-token-id": oAuthToken,
         "branch": "",
         "default-branch": "true"
@@ -90,7 +90,7 @@ def validateRun(runResponse):
     print str(runResponse.status_code) + ": " + str(runResponse.text) 
 
 def createWorkspace():
-  payload = createWorkspacePayload(vcsOrganization,vcsWorkspace,TFEworkspace,vcsWorkingDirectory,TFEorganization)
+  payload = createWorkspacePayload(vcsOrganization,vcsRepo,TFEworkspace,vcsWorkingDirectory,TFEorganization)
   try:
     r = requests.post(createWorkspaceURL, headers=headers, data=json.dumps(payload))
     validateRun(r)
