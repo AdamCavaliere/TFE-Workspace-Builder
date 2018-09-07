@@ -1,10 +1,21 @@
+#!/usr/bin/env python
 import requests
 import json
 import hcl #python pip package is pyhcl
 import os
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-workspace", required=True, help="TFE Workspace to create", type=str)
+parser.add_argument("-repo", required=True, help="TFE Repo to link to", type=str)
+parser.add_argument("-directory", required=False, help="Directory to utilize", type=str)
+parser.add_argument("-awstoken", required=False, help="Create a Token for AWS", type=bool)
+parser.add_argument("-destroyable", required=False, help="Set Environment Variable to allow destruction", type=bool)
+args = parser.parse_args()
+
 # Populate if you want to utilize Vault 
-utilizeVault = False
-vaultURL = "http://sevault.hashidemos.io:8200"
+utilizeVault = True
+vaultURL = os.environ['VAULT_ADDR']
 secretLocation = "secret/adam/terraform"
 
 #Will run against vault and grab secrets if the utilizeVault variable is set to True, else it will look for your TFE Org's Atlas Token 
@@ -20,10 +31,10 @@ else:
 
 #User Configurable Vars - if utilizing Vault, replace the ts['foo'] values.
 TFEorganization = "azc"
-TFEworkspace = "Distributor-XYZ-Network"
+TFEworkspace = args.workspace
 vcsOrganization = "AdamCavaliere"
-vcsRepo = "terraform-demos" #This is the repo which you are linking to your TFE workspace
-vcsWorkingDirectory = "" #This can be blank - only needed to be specified if you are using a sub-directory in your repo.
+vcsRepo = args.repo #This is the repo which you are linking to your TFE workspace
+vcsWorkingDirectory = args.directory #This can be blank - only needed to be specified if you are using a sub-directory in your repo.
 
 
 #Base configurations
@@ -120,18 +131,29 @@ def createVariables():
         print r.status_code()
 
 def setEnvVariables():
-  if utilizeVault == False:
-    with open('/Users/adam/SynologyDrive/HashiDemos/terraform-aws-examples/application-config/envVars.json', 'r') as fp:
-      obj = json.load(fp)
+  if args.awstoken == True:
+    vaultToken = client.create_token(policies=['aws-terraform'],lease='12h')
+    payload = createVarPayload("VAULT_TOKEN",vaultToken['auth']['client_token'],TFEorganization,TFEworkspace,"env","false")
+    r = requests.post(createVariablesURL, headers=headers, data=json.dumps(payload))
+    payload = createVarPayload("VAULT_ADDR",vaultURL,TFEorganization,TFEworkspace,"env","false")
+    r = requests.post(createVariablesURL, headers=headers, data=json.dumps(payload))
   else:
-    obj = json.loads(ts['envVars'])
-  for k,v in obj['data'].items():  
-    payload = createVarPayload(k,v['value'],TFEorganization,TFEworkspace,v['vartype'],v['sensitive'])
-    try:
-      r = requests.post(createVariablesURL, headers=headers, data=json.dumps(payload))
-      validateRun(r)
-    except:
-      print r.status_code
+    if utilizeVault == False:
+      with open('/Users/adam/SynologyDrive/HashiDemos/terraform-aws-examples/application-config/envVars.json', 'r') as fp:
+        obj = json.load(fp)
+    else:
+      obj = json.loads(ts['envVars'])
+    for k,v in obj['data'].items():  
+      payload = createVarPayload(k,v['value'],TFEorganization,TFEworkspace,v['vartype'],v['sensitive'])
+      try:
+        r = requests.post(createVariablesURL, headers=headers, data=json.dumps(payload))
+        validateRun(r)
+      except:
+        print r.status_code
+  if args.destroyable == True:
+    payload = createVarPayload("CONFIRM_DESTROY","1",TFEorganization,TFEworkspace,"env","false")
+    r = requests.post(createVariablesURL, headers=headers, data=json.dumps(payload))
+
 
  
 createWorkspace()
